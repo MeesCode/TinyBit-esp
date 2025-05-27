@@ -84,7 +84,7 @@ void spi_master_init(TFT_t * dev, int16_t GPIO_MOSI, int16_t GPIO_SCLK, int16_t 
 		.sclk_io_num = GPIO_SCLK,
 		.quadwp_io_num = -1,
 		.quadhd_io_num = -1,
-		.max_transfer_sz = 0,
+		.max_transfer_sz = 4096,
 		.flags = 0
 	};
 
@@ -175,7 +175,7 @@ bool spi_master_write_addr(TFT_t * dev, uint16_t addr1, uint16_t addr2)
 
 bool spi_master_write_color(TFT_t * dev, uint16_t color, uint16_t size)
 {
-	static uint8_t Byte[1024];
+	static uint8_t Byte[4096];
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		Byte[index++] = (color >> 8) & 0xFF;
@@ -188,7 +188,7 @@ bool spi_master_write_color(TFT_t * dev, uint16_t color, uint16_t size)
 // Add 202001
 bool spi_master_write_colors(TFT_t * dev, uint16_t * colors, uint16_t size)
 {
-	static uint8_t Byte[1024];
+	static uint8_t Byte[4096];
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		Byte[index++] = (colors[i] >> 8) & 0xFF;
@@ -200,7 +200,7 @@ bool spi_master_write_colors(TFT_t * dev, uint16_t * colors, uint16_t size)
 
 bool spi_master_write_colors_rgb(TFT_t * dev, uint8_t * colors, uint16_t size)
 {
-	static uint8_t Byte[1024];
+	static uint8_t Byte[4096];
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		// convert to rgb565
@@ -961,8 +961,8 @@ void lcdDrawFinish(TFT_t *dev)
 	uint32_t size = dev->_width*dev->_height;
 	uint16_t *image = dev->_frame_buffer;
 	while (size > 0) {
-		// 1024 bytes per time.
-		uint16_t bs = (size > 1024) ? 1024 : size;
+		// 2048 pixels per time (4096 bytes).
+		uint16_t bs = (size > 2048) ? 2048 : size;
 		spi_master_write_colors(dev, image, bs);
 		size -= bs;
 		image += bs;
@@ -984,8 +984,8 @@ void lcdDrawFinishRgb(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16
 	//uint16_t size = dev->_width*dev->_height;
 	uint32_t size = w*h;
 	while (size > 0) {
-		// 1024 bytes per time.
-		uint16_t bs = (size > 1024) ? 1024 : size;
+		// 1365 pixels per time (4095 bytes RGB).
+		uint16_t bs = (size > 2048) ? 2048 : size;
 		spi_master_write_colors_rgb(dev, image, bs);
 		size -= bs;
 		image += bs*3; // 3 bytes per pixel
