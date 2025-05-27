@@ -3,7 +3,7 @@
 
 #include "driver/spi_master.h"
 
-#define rgb565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
+#define rgb565(r, g, b) ((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | ((b) >> 3))
 
 #define RED    rgb565(255,   0,   0) // 0xf800
 #define GREEN  rgb565(  0, 255,   0) // 0x07e0
@@ -82,5 +82,9 @@ void lcdSetRect(TFT_t * dev, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 void lcdSetCursor(TFT_t * dev, uint16_t x0, uint16_t y0, uint16_t r, uint16_t color, uint16_t *save);
 void lcdResetCursor(TFT_t * dev, uint16_t x0, uint16_t y0, uint16_t r, uint16_t color, uint16_t *save);
 void lcdDrawFinish(TFT_t *dev);
+
+bool spi_master_write_colors_rgb(TFT_t * dev, uint8_t * colors, uint16_t size);
+void lcdDrawMultiPixelsRgb(TFT_t * dev, uint16_t x, uint16_t y, uint16_t size, uint8_t * colors);
+void lcdDrawFinishRgb(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 #endif /* MAIN_ST7789_H_ */
 

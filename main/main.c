@@ -431,24 +431,16 @@ void ST7789(void *pvParameters)
   lcdFillScreen(&dev, BLACK);
   ESP_LOGI(TAG, "Display Initialized");
 
+  int dy = 1;
+  int py = 20;
+
 	while(1) {
-    lcdDrawFillRect(&dev, 0, 0, 0, 0, BLACK);
+		lcdDrawFinishRgb(&dev, test, 20, py, 128, 128);
 
-		// image is encoded in rgb format, so we need to convert it to rgb565
-		for(int y = 0; y < 128; y++) {
-			for (int x = 0; x < 128; x++) {
-				// take 3 bytes from test array
-				uint8_t r = test[(y * 128 + x) * 3 + 0];
-				uint8_t g = test[(y * 128 + x) * 3 + 1];
-				uint8_t b = test[(y * 128 + x) * 3 + 2];
-				// convert to rgb565
-				uint16_t rgb565 = rgb565(r, g, b);
-				// draw pixel at (20 + x, 20 + y)
-				lcdDrawPixel(&dev, 20 + x, 20 + y, rgb565);
-			}
-		}
-
-		lcdDrawFinish(&dev);
+    py += dy;
+    if (py >= CONFIG_HEIGHT - 20 - 128 || py <= 20) {
+      dy = -dy; // reverse direction
+    }
 	}
 
 	// never reach here

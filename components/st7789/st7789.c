@@ -198,6 +198,20 @@ bool spi_master_write_colors(TFT_t * dev, uint16_t * colors, uint16_t size)
 	return spi_master_write_byte( dev->_SPIHandle, Byte, size*2);
 }
 
+bool spi_master_write_colors_rgb(TFT_t * dev, uint8_t * colors, uint16_t size)
+{
+	static uint8_t Byte[1024];
+	int index = 0;
+	for(int i=0;i<size;i++) {
+		// convert to rgb565
+		uint16_t rgb565 = rgb565(colors[i*3], colors[i*3+1], colors[i*3+2]);
+		Byte[index++] = (rgb565 >> 8) & 0xFF;
+		Byte[index++] = rgb565 & 0xFF;
+	}
+	gpio_set_level( dev->_dc, SPI_Data_Mode );
+	return spi_master_write_byte( dev->_SPIHandle, Byte, size*2);
+}
+
 void delayMS(int ms) {
 	int _ms = ms + (portTICK_PERIOD_MS - 1);
 	TickType_t xTicksToDelay = _ms / portTICK_PERIOD_MS;
@@ -328,6 +342,32 @@ void lcdDrawMultiPixels(TFT_t * dev, uint16_t x, uint16_t y, uint16_t size, uint
 		spi_master_write_addr(dev, _y1, _y2);
 		spi_master_write_command(dev, 0x2C);	// Memory Write
 		spi_master_write_colors(dev, colors, size);
+	}
+}
+
+// Draw multi pixel
+// x:X coordinate
+// y:Y coordinate
+// size:Number of colors
+// colors:colors
+void lcdDrawMultiPixelsRgb(TFT_t * dev, uint16_t x, uint16_t y, uint16_t size, uint8_t * colors) {
+	if (x+size > dev->_width) return;
+	if (y >= dev->_height) return;
+
+	if (dev->_use_frame_buffer) {
+		ESP_LOGD(TAG," lcdDrawMultiPixelsRgb: External frame buffer must be used");
+	} else {
+		uint16_t _x1 = x + dev->_offsetx;
+		uint16_t _x2 = _x1 + (size-1);
+		uint16_t _y1 = y + dev->_offsety;
+		uint16_t _y2 = _y1;
+
+		spi_master_write_command(dev, 0x2A);	// set column(x) address
+		spi_master_write_addr(dev, _x1, _x2);
+		spi_master_write_command(dev, 0x2B);	// set Page(y) address
+		spi_master_write_addr(dev, _y1, _y2);
+		spi_master_write_command(dev, 0x2C);	// Memory Write
+		spi_master_write_colors_rgb(dev, colors, size);
 	}
 }
 
@@ -929,3 +969,27 @@ void lcdDrawFinish(TFT_t *dev)
 	}
 	return;
 }
+
+// Draw Frame Buffer
+void lcdDrawFinishRgb(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+	if (dev->_use_frame_buffer == true) return;
+
+	spi_master_write_command(dev, 0x2A); // set column(x) address
+	spi_master_write_addr(dev, dev->_offsetx+x, dev->_offsetx+x+w-1);
+	spi_master_write_command(dev, 0x2B); // set Page(y) address
+	spi_master_write_addr(dev, dev->_offsety+y, dev->_offsety+y+h-1);
+	spi_master_write_command(dev, 0x2C); // Memory Write
+
+	//uint16_t size = dev->_width*dev->_height;
+	uint32_t size = w*h;
+	while (size > 0) {
+		// 1024 bytes per time.
+		uint16_t bs = (size > 1024) ? 1024 : size;
+		spi_master_write_colors_rgb(dev, image, bs);
+		size -= bs;
+		image += bs*3; // 3 bytes per pixel
+	}
+	return;
+}
+
