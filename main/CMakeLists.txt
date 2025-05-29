@@ -1,4 +1,10 @@
-set(srcs "main.c"
-    )
 
-idf_component_register(SRCS ${srcs} INCLUDE_DIRS ".")
+idf_component_register(
+    SRCS 
+        "main.c" 
+        "SD_Card/SD_SPI.c"
+
+    INCLUDE_DIRS 
+        "./SD_Card"
+        "."
+)

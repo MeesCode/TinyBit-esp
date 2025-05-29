@@ -10,6 +10,7 @@
 #include "esp_system.h"
 
 #include "st7789.h"
+#include "SD_Card/SD_SPI.h"
 
 static const char *TAG = "ST7789";
 
@@ -421,6 +422,10 @@ void ST7789(void *pvParameters)
 
 	spi_master_init(&dev, CONFIG_MOSI_GPIO, CONFIG_SCLK_GPIO, CONFIG_CS_GPIO, CONFIG_DC_GPIO, CONFIG_RESET_GPIO, CONFIG_BL_GPIO);
 	lcdInit(&dev, CONFIG_WIDTH, CONFIG_HEIGHT, CONFIG_OFFSETX, CONFIG_OFFSETY);
+
+  SD_Init();
+  Flash_Searching();
+  s_example_read_file("/sdcard/test.txt");
 
 #if CONFIG_INVERSION
 	ESP_LOGI(TAG, "Enable Display Inversion");
