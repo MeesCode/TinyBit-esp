@@ -17,7 +17,7 @@
 
 static const char *TAG = "ST7789";
 
-uint8_t image[128 * 128 * 4]; // RGB8888
+uint8_t image[CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4]; // RGB8888
 
 void on_draw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
@@ -43,7 +43,7 @@ void ST7789(void *pvParameters)
     ESP_LOGI(TAG, "Display Initialized");
 
     ESP_LOGI(TAG, "Loading PNG file from SD card...");
-    FILE *fp = fopen("/sdcard/test.png", "rb");
+    FILE *fp = fopen("/sdcard/flappy.tb.png", "rb");
 
     pngle_t *pngle = pngle_new();
     pngle_set_draw_callback(pngle, on_draw);
@@ -74,17 +74,14 @@ void ST7789(void *pvParameters)
     fclose(fp);
     pngle_destroy(pngle);
 
-    int dy = 1;
-    int py = 20;
+	uint8_t *display_buffer = NULL;
+    tinybit_init(image, display_buffer);
+	ESP_LOGI(TAG, "TinyBit initialized with image data");
 
     // logic loop
 	while(1) {
-		lcdDrawImage(&dev, image, 20, py, 128, 128);
-
-        py += dy;
-        if (py >= CONFIG_HEIGHT - 20 - 128 || py <= 20) {
-            dy = -dy; // reverse direction
-        }
+		tinybit_frame();
+		lcdDrawImage(&dev, display_buffer, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT);
 	}
 
 	// never reach here

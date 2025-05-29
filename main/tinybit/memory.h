@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MEM_SIZE 0x80000 // 512KiB
+#define MEM_SIZE 0x30000 // 512KiB
 #define MEM_HEADER_START 0x0000
 #define MEM_HEADER_SIZE 0x0500
 #define MEM_FONT_START 0x0500
@@ -12,8 +12,8 @@
 #define MEM_SPRITESHEET_SIZE 0x10000
 #define MEM_DISPLAY_START 0x20000
 #define MEM_DISPLAY_SIZE 0x10000
-#define MEM_USER_START 0x30000
-#define MEM_USER_SIZE 0x50000
+// #define MEM_USER_START 0x30000
+// #define MEM_USER_SIZE 0x50000
 
 extern uint8_t memory[MEM_SIZE];
 

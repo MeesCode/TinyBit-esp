@@ -189,7 +189,6 @@ int lua_pset(lua_State* L) {
 }
 
 int lua_fillp(lua_State* L) {
-    printf("test");
     if (lua_gettop(L) != 1) {
         return 0;
     }

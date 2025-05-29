@@ -6,6 +6,7 @@
 #include "graphics.h"
 #include "memory.h"
 #include "audio.h"
+#include "input.h"
 
 #include "lua.h"
 #include "lualib.h"
@@ -14,7 +15,7 @@
 int frame_timer = 0;
 lua_State* L;
 
-void tinybit_init(char* cartridge_buffer) {
+void tinybit_init(uint8_t* cartridge_buffer, uint8_t* display_buffer) {
 
     // init functions
     memory_init();
@@ -57,8 +58,8 @@ void tinybit_init(char* cartridge_buffer) {
     lua_setglobal(L, "MEM_DISPLAY_START");
     lua_pushinteger(L, MEM_DISPLAY_SIZE);
     lua_setglobal(L, "MEM_DISPLAY_SIZE");
-    lua_pushinteger(L, MEM_USER_START);
-    lua_setglobal(L, "MEM_USER_START");
+    // lua_pushinteger(L, MEM_USER_START);
+    // lua_setglobal(L, "MEM_USER_START");
 
     // set lua tone variables
     lua_pushinteger(L, Ab);
@@ -109,8 +110,10 @@ void tinybit_init(char* cartridge_buffer) {
     lua_pushinteger(L, SCREEN_HEIGHT);
     lua_setglobal(L, "SCREEN_HEIGHT");
 
-    uint8_t* spritesheet_buffer = (uint8_t*)malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 4);
-    char* source_buffer = (char*)malloc((CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) - (SCREEN_WIDTH * SCREEN_HEIGHT * 4));
+    // TODO: load font
+
+    // uint8_t* spritesheet_buffer = (uint8_t*)malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 4);
+    char* source_buffer = (char*)malloc((CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) - (SCREEN_WIDTH * SCREEN_HEIGHT * 4)); // max source size
 
     // iterate over cartridge buffer and extract spritesheet and source code
     for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
@@ -126,7 +129,7 @@ void tinybit_init(char* cartridge_buffer) {
 
             // spritesheet data
             if (byte_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                spritesheet_buffer[byte_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+                memory[MEM_SPRITESHEET_START + byte_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
             }
 
             // source code
@@ -140,4 +143,15 @@ void tinybit_init(char* cartridge_buffer) {
     if (luaL_dostring(L, source_buffer) == LUA_OK) {
         lua_pop(L, lua_gettop(L));
     }
+}
+
+void tinybit_frame() {
+    // perform lua draw function every frame
+    lua_getglobal(L, "_draw");
+    if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
+        lua_pop(L, lua_gettop(L));
+    }
+
+    // save current button state
+    save_button_state();
 }
