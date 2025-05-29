@@ -13,15 +13,18 @@
 #include "SD_SPI.h"
 #include "pngle.h"
 
+#include "tinybit.h"
+
 static const char *TAG = "ST7789";
 
-uint8_t image[128 * 128 * 3]; // RGB888
+uint8_t image[128 * 128 * 4]; // RGB8888
 
 void on_draw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
     image[(y * 128 + x) * 3 + 0] = rgba[0]; // Red
     image[(y * 128 + x) * 3 + 1] = rgba[1]; // Green
     image[(y * 128 + x) * 3 + 2] = rgba[2]; // Blue
+	image[(y * 128 + x) * 3 + 3] = rgba[3]; // Alpha (not used)
 }
 
 void ST7789(void *pvParameters)
@@ -33,30 +36,21 @@ void ST7789(void *pvParameters)
 
 	spi_master_init(&dev, CONFIG_MOSI_GPIO, CONFIG_SCLK_GPIO, CONFIG_CS_GPIO, CONFIG_DC_GPIO, CONFIG_RESET_GPIO, CONFIG_BL_GPIO);
 	lcdInit(&dev, CONFIG_WIDTH, CONFIG_HEIGHT, CONFIG_OFFSETX, CONFIG_OFFSETY);
+    SD_Init();
 
-  SD_Init();
-  Flash_Searching();
-  s_example_read_file("/sdcard/test.txt");
+    //lcdFillScreen(&dev, BLACK);
+    lcdDrawSquare(&dev, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT, BLACK);
+    ESP_LOGI(TAG, "Display Initialized");
 
-#if CONFIG_INVERSION
-	ESP_LOGI(TAG, "Enable Display Inversion");
-	//lcdInversionOn(&dev);
-	lcdInversionOff(&dev);
-#endif
+    ESP_LOGI(TAG, "Loading PNG file from SD card...");
+    FILE *fp = fopen("/sdcard/test.png", "rb");
 
-  //lcdFillScreen(&dev, BLACK);
-  lcdDrawSquare(&dev, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT, BLACK);
-  ESP_LOGI(TAG, "Display Initialized");
-
-  ESP_LOGI(TAG, "Loading PNG file from SD card...");
-  FILE *fp = fopen("/sdcard/test.png", "rb");
-
-  pngle_t *pngle = pngle_new();
-  pngle_set_draw_callback(pngle, on_draw);
-  
-  char buf[1024];
-  int remain = 0;
-  int len;
+    pngle_t *pngle = pngle_new();
+    pngle_set_draw_callback(pngle, on_draw);
+    
+    char buf[1024];
+    int remain = 0;
+    int len;
 	while (!feof(fp)) {
 		if (remain >= sizeof(buf)) {
 			ESP_LOGE(__FUNCTION__, "Buffer exceeded");
@@ -76,21 +70,21 @@ void ST7789(void *pvParameters)
 		if (remain > 0) memmove(buf, buf + fed, remain);
 	}
 
-  ESP_LOGI(TAG, "PNG file read complete");
-  fclose(fp);
-  pngle_destroy(pngle);
+    ESP_LOGI(TAG, "PNG file read complete");
+    fclose(fp);
+    pngle_destroy(pngle);
 
-  int dy = 1;
-  int py = 20;
+    int dy = 1;
+    int py = 20;
 
-  // logic loop
+    // logic loop
 	while(1) {
 		lcdDrawImage(&dev, image, 20, py, 128, 128);
 
-    py += dy;
-    if (py >= CONFIG_HEIGHT - 20 - 128 || py <= 20) {
-      dy = -dy; // reverse direction
-    }
+        py += dy;
+        if (py >= CONFIG_HEIGHT - 20 - 128 || py <= 20) {
+            dy = -dy; // reverse direction
+        }
 	}
 
 	// never reach here
