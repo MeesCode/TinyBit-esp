@@ -66,7 +66,7 @@ int lua_sprite(lua_State* L) {
     int targetW = (int)luaL_checknumber(L, 7);
     int targetH = (int)luaL_checknumber(L, 8);
 
-    draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
+    draw_sprite_rotated(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 20.0f);
     return 0;
 }
 

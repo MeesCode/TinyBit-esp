@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 #include "graphics.h"
@@ -187,6 +188,65 @@ void draw_pixel(int x, int y) {
     }
     uint32_t* pixel = (uint32_t*)&memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
     blend(pixel, fillColor, *pixel);
+}
+
+void draw_sprite_rotated(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH, float angleDegrees) {
+    float angleRad = angleDegrees * M_PI / 180.0f;
+    float cosA = cosf(angleRad);
+    float sinA = sinf(angleRad);
+    
+    float shear1 = -tanf(angleRad / 2.0f);
+    float shear2 = sinA;
+    float shear3 = shear1;
+    
+    int centerX = targetW / 2;
+    int centerY = targetH / 2;
+    
+    int clipStartX = targetX < 0 ? -targetX : 0;
+    int clipStartY = targetY < 0 ? -targetY : 0;
+    int clipEndX = (targetX + targetW > SCREEN_WIDTH) ? SCREEN_WIDTH - targetX : targetW;
+    int clipEndY = (targetY + targetH > SCREEN_HEIGHT) ? SCREEN_HEIGHT - targetY : targetH;
+    
+    if (clipStartX >= clipEndX || clipStartY >= clipEndY) return;
+    
+    int scaleX_fixed = (sourceW << 16) / targetW;
+    int scaleY_fixed = (sourceH << 16) / targetH;
+    
+    for (int y = clipStartY; y < clipEndY; ++y) {
+        for (int x = clipStartX; x < clipEndX; ++x) {
+            int relX = x - centerX;
+            int relY = y - centerY;
+            
+            float tempX = relX + shear1 * relY;
+            float tempY = relY;
+            
+            tempX = tempX;
+            tempY = tempY + shear2 * tempX;
+            
+            tempX = tempX + shear3 * tempY;
+            tempY = tempY;
+            
+            int rotX = (int)(tempX + centerX);
+            int rotY = (int)(tempY + centerY);
+            
+            if (rotX >= 0 && rotX < targetW && rotY >= 0 && rotY < targetH) {
+                int sourcePixelX = sourceX + ((rotX * scaleX_fixed) >> 16);
+                int sourcePixelY = sourceY + ((rotY * scaleY_fixed) >> 16);
+                
+                if (sourcePixelX >= sourceX && sourcePixelX < sourceX + sourceW &&
+                    sourcePixelY >= sourceY && sourcePixelY < sourceY + sourceH) {
+                    
+                    uint32_t* src = (uint32_t*)&memory[MEM_SPRITESHEET_START + (sourcePixelY * SCREEN_WIDTH + sourcePixelX) * 4];
+                    uint32_t srcColor = *src;
+                    
+                    if ((srcColor >> 24) > 0) {
+                        uint32_t* dst = (uint32_t*)&memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4];
+                        blend(dst, srcColor, *dst);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void draw_cls() {
