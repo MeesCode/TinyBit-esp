@@ -1,6 +1,9 @@
 #ifndef TINYBIT_H
 #define TINYBIT_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -9,7 +12,9 @@
 #define CARTRIDGE_WIDTH 336
 #define CARTRIDGE_HEIGHT 376
 
-void tinybit_init(uint8_t* cartridge_buffer, uint8_t* display_buffer);
-void tinybit_frame();
+uint8_t* tinybit_init();
+bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels);
+int tinybit_frame();
+char* tinybit_start();
 
 #endif

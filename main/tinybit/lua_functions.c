@@ -199,82 +199,82 @@ int lua_fillp(lua_State* L) {
     return 0;
 }
 
-// int lua_tone(lua_State* L) {
-//     if (lua_gettop(L) < 4 && lua_gettop(L) > 6) {
-//         return 0;
-//     }
+int lua_tone(lua_State* L) {
+    if (lua_gettop(L) < 4 && lua_gettop(L) > 6) {
+        return 0;
+    }
 
-//     TONE tone = luaL_checkinteger(L, 1);
-//     int octave = luaL_checkinteger(L, 2);
-//     int eights = luaL_checkinteger(L, 3);
-//     WAVEFORM wf = luaL_checkinteger(L, 4);
+    TONE tone = luaL_checkinteger(L, 1);
+    int octave = luaL_checkinteger(L, 2);
+    int eights = luaL_checkinteger(L, 3);
+    WAVEFORM wf = luaL_checkinteger(L, 4);
 
-//     if(lua_gettop(L) == 4) {
-//         play_tone(tone, octave, eights, wf, volume, channel);
-//         return 0;
-//     }
+    if(lua_gettop(L) == 4) {
+        play_tone(tone, octave, eights, wf, volume, channel);
+        return 0;
+    }
 
-//     int vol = luaL_checkinteger(L, 5);
+    int vol = luaL_checkinteger(L, 5);
 
-//     if(lua_gettop(L) == 5) {
-//         play_tone(tone, octave, eights, wf, vol, channel);
-//         return 0;
-//     }
+    if(lua_gettop(L) == 5) {
+        play_tone(tone, octave, eights, wf, vol, channel);
+        return 0;
+    }
 
-//     int chan = luaL_checkinteger(L, 6);
+    int chan = luaL_checkinteger(L, 6);
 
-//     if(lua_gettop(L) == 6) {
-//         play_tone(tone, octave, eights, wf, vol, chan);
-//     }
+    if(lua_gettop(L) == 6) {
+        play_tone(tone, octave, eights, wf, vol, chan);
+    }
 
     
-//     return 0;
-// }
+    return 0;
+}
 
-// int lua_noise(lua_State* L) {
-//     if (lua_gettop(L) == 1) {
-//         int eights = luaL_checkinteger(L, 1);
-//         play_noise(eights, volume, channel);
-//         return 0;
-//     }
+int lua_noise(lua_State* L) {
+    if (lua_gettop(L) == 1) {
+        int eights = luaL_checkinteger(L, 1);
+        play_noise(eights, volume, channel);
+        return 0;
+    }
 
-//     if (lua_gettop(L) == 2) {
-//         int eights = luaL_checkinteger(L, 1);
-//         int vol = luaL_checkinteger(L, 2);
-//         play_noise(eights, vol, channel);
-//         return 0;
-//     }
+    if (lua_gettop(L) == 2) {
+        int eights = luaL_checkinteger(L, 1);
+        int vol = luaL_checkinteger(L, 2);
+        play_noise(eights, vol, channel);
+        return 0;
+    }
 
-//     if (lua_gettop(L) == 3) {
-//         int eights = luaL_checkinteger(L, 1);
-//         int vol = luaL_checkinteger(L, 2);
-//         int chan = luaL_checkinteger(L, 3);
-//         play_noise(eights, vol, chan);
-//         return 0;
-//     }
+    if (lua_gettop(L) == 3) {
+        int eights = luaL_checkinteger(L, 1);
+        int vol = luaL_checkinteger(L, 2);
+        int chan = luaL_checkinteger(L, 3);
+        play_noise(eights, vol, chan);
+        return 0;
+    }
 
-//     return 0;
-// }
+    return 0;
+}
 
-// int lua_volume(lua_State* L) {
-//     if (lua_gettop(L) != 1) {
-//         return 0;
-//     }
+int lua_volume(lua_State* L) {
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
 
-//     int new_volume = luaL_checkinteger(L, 1);
-//     set_volume(new_volume);
-//     return 0;
-// }
+    int new_volume = luaL_checkinteger(L, 1);
+    set_volume(new_volume);
+    return 0;
+}
 
-// int lua_channel(lua_State* L) {
-//     if (lua_gettop(L) != 1) {
-//         return 0;
-//     }
+int lua_channel(lua_State* L) {
+    if (lua_gettop(L) != 1) {
+        return 0;
+    }
 
-//     int new_channel = luaL_checkinteger(L, 1);
-//     set_channel(new_channel);
-//     return 0;
-// }
+    int new_channel = luaL_checkinteger(L, 1);
+    set_channel(new_channel);
+    return 0;
+}
 
 int lua_bpm(lua_State* L) {
     int new_bpm = luaL_checkinteger(L, 1);

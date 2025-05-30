@@ -1,6 +1,8 @@
 #include "tinybit.h"
 
 #include <inttypes.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "lua_functions.h"
 #include "graphics.h"
@@ -12,14 +14,20 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+size_t cartridge_index = 0; // index for cartridge buffer
+//uint8_t source_buffer[CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4 - SCREEN_WIDTH * SCREEN_HEIGHT * 4]; // max source size
+char source_buffer[4096];
 int frame_timer = 0;
 lua_State* L;
 
-void tinybit_init(uint8_t* cartridge_buffer, uint8_t* display_buffer) {
+char error_message[256] = {0}; // error message buffer
+uint8_t* tinybit_init() {
+
+    strcpy(error_message, "lua error");
 
     // init functions
     memory_init();
-
+    
     // set up lua VM
     L = luaL_newstate();
 
@@ -110,48 +118,81 @@ void tinybit_init(uint8_t* cartridge_buffer, uint8_t* display_buffer) {
     lua_pushinteger(L, SCREEN_HEIGHT);
     lua_setglobal(L, "SCREEN_HEIGHT");
 
+    lua_pushinteger(L, X);
+	lua_setglobal(L, "X");
+	lua_pushinteger(L, Z);
+	lua_setglobal(L, "Z");
+	lua_pushinteger(L, UP);
+	lua_setglobal(L, "UP");
+	lua_pushinteger(L, DOWN);
+	lua_setglobal(L, "DOWN");
+	lua_pushinteger(L, LEFT);
+	lua_setglobal(L, "LEFT");
+	lua_pushinteger(L, RIGHT);
+	lua_setglobal(L, "RIGHT");
+	lua_pushinteger(L, START);
+	lua_setglobal(L, "START");
+
+    lua_setup_functions(L);
+
     // TODO: load font
 
-    // uint8_t* spritesheet_buffer = (uint8_t*)malloc(SCREEN_WIDTH * SCREEN_HEIGHT * 4);
-    char* source_buffer = (char*)malloc((CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) - (SCREEN_WIDTH * SCREEN_HEIGHT * 4)); // max source size
-
-    // iterate over cartridge buffer and extract spritesheet and source code
-    for (int y = 0; y < CARTRIDGE_HEIGHT; y++) {
-        for (int x = 0; x < CARTRIDGE_WIDTH; x++) {
-
-            long pixel_index = ((y * CARTRIDGE_WIDTH) + x) * 4; // indicates pixel location in buffer
-            long byte_index = ((y * CARTRIDGE_WIDTH) + x); // indicates which byte we are saving
-
-            uint8_t r = cartridge_buffer[pixel_index];
-            uint8_t g = cartridge_buffer[pixel_index + 1];
-            uint8_t b = cartridge_buffer[pixel_index + 2];
-            uint8_t a = cartridge_buffer[pixel_index + 3];
-
-            // spritesheet data
-            if (byte_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-                memory[MEM_SPRITESHEET_START + byte_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
-            }
-
-            // source code
-            else if (byte_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) {
-                source_buffer[byte_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
-            }
-        }
-    }
-    
-    // load lua file
-    if (luaL_dostring(L, source_buffer) == LUA_OK) {
-        lua_pop(L, lua_gettop(L));
-    }
+    return &memory[MEM_DISPLAY_START];
 }
 
-void tinybit_frame() {
+bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
+    
+    // check if cartridge index is within bounds
+    // if (cartridge_index + (pixels/4) > (CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT)/4) {
+    //     return false; 
+    // }
+
+    for(int i = 0; i < pixels; i += 4) {
+        uint8_t r = cartridge_buffer[i];
+        uint8_t g = cartridge_buffer[i + 1];
+        uint8_t b = cartridge_buffer[i + 2];
+        uint8_t a = cartridge_buffer[i + 3];
+
+        // spritesheet data
+        if (cartridge_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
+            memory[MEM_SPRITESHEET_START + cartridge_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+        }
+
+        // source code
+        else if (cartridge_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) {
+            source_buffer[cartridge_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+        }
+
+        // increment cartridge index
+        cartridge_index++;
+    }
+
+    return true;
+}
+
+char* tinybit_start(){
+     // load lua file
+    if (luaL_dostring(L, source_buffer) == LUA_OK) {
+        lua_pop(L, lua_gettop(L));
+    } else {
+        return error_message;
+    }
+
+    return source_buffer;
+}
+
+int tinybit_frame() {
     // perform lua draw function every frame
     lua_getglobal(L, "_draw");
-    if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
+    int res = lua_pcall(L, 0, 1, 0);
+    if (res == LUA_OK) {
         lua_pop(L, lua_gettop(L));
+    } else {
+        return res;
     }
 
     // save current button state
     save_button_state();
+
+    return -1;
 }

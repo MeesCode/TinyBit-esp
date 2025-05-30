@@ -25,6 +25,8 @@
 static const int SPI_Command_Mode = 0;
 static const int SPI_Data_Mode = 1;
 
+static uint8_t Byte[4096];
+
 int clock_speed_hz = SPI_DEFAULT_FREQUENCY;
 
 void spi_clock_speed(int speed) {
@@ -160,7 +162,6 @@ bool spi_master_write_addr(TFT_t * dev, uint16_t addr1, uint16_t addr2)
 
 bool spi_master_write_colors(TFT_t * dev, uint8_t * colors, uint16_t size)
 {
-	static uint8_t Byte[4096];
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		// convert to rgb565
@@ -174,7 +175,6 @@ bool spi_master_write_colors(TFT_t * dev, uint8_t * colors, uint16_t size)
 
 bool spi_master_write_color(TFT_t * dev, uint16_t color, uint16_t size)
 {
-	static uint8_t Byte[4096];
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		Byte[index++] = (color >> 8) & 0xFF;
@@ -250,7 +250,7 @@ void lcdDrawImage(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16_t w
 	uint32_t size = w*h;
 	while (size > 0) {
 		// 1365 pixels per time (4095 bytes RGB).
-		uint16_t bs = (size > 2048) ? 2048 : size;
+		uint16_t bs = (size > 256) ? 256 : size;
 		spi_master_write_colors(dev, image, bs);
 		size -= bs;
 		image += bs*4; // 4 bytes per pixel
