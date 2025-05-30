@@ -23,8 +23,6 @@ void lua_setup_functions(lua_State* L) {
     lua_setglobal(L, "rect");
     lua_pushcfunction(L, lua_oval);
     lua_setglobal(L, "oval");
-    lua_pushcfunction(L, lua_pset);
-    lua_setglobal(L, "pset");
     lua_pushcfunction(L, lua_tone);
     lua_setglobal(L, "tone");
     lua_pushcfunction(L, lua_noise);
@@ -51,8 +49,6 @@ void lua_setup_functions(lua_State* L) {
     lua_setglobal(L, "prints");
     lua_pushcfunction(L, lua_text);
     lua_setglobal(L, "text");
-    lua_pushcfunction(L, lua_fillp);
-    lua_setglobal(L, "fillp");
 }
 
 int lua_sprite(lua_State* L) {
@@ -120,17 +116,6 @@ int lua_fill(lua_State* L) {
     
     set_fill(r, g, b, a);
 
-    if (lua_gettop(L) == 4) {
-        return 0;
-    }
-
-    r = (int)luaL_checknumber(L, 5);
-    g = (int)luaL_checknumber(L, 6);
-    b = (int)luaL_checknumber(L, 7);
-    a = (int)luaL_checknumber(L, 8);
-
-    set_fill2(r, g, b, a);
-
     return 0;
 }
 
@@ -173,29 +158,6 @@ int lua_oval(lua_State* L) {
     int h = (int)luaL_checknumber(L, 4);
 
     draw_oval(x, y, w, h);
-    return 0;
-}
-
-int lua_pset(lua_State* L) {
-    if (lua_gettop(L) != 2) {
-        return 0;
-    }
-
-    int x = (int)luaL_checknumber(L, 1);
-    int y = (int)luaL_checknumber(L, 2);
-
-    draw_pixel(x, y);
-    return 0;
-}
-
-int lua_fillp(lua_State* L) {
-    if (lua_gettop(L) != 1) {
-        return 0;
-    }
-
-    int pattern = luaL_checkinteger(L, 1);
-
-    set_fill_pattern(pattern);
     return 0;
 }
 

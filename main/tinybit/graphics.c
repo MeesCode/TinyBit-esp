@@ -10,10 +10,8 @@
 #include "memory.h"
 
 uint32_t fillColor = 0;
-uint32_t fillColor2 = 0;
 uint32_t strokeColor = 0;
 int strokeWidth = 0;
-uint16_t fillPattern = 0;
 
 void blend(uint32_t* result, uint32_t fg, uint32_t bg) {
     float alpha_fg = (fg >> 24) / 255.0f;
@@ -40,7 +38,6 @@ int random_range(int min, int max) {
 }
 
 void draw_sprite(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH) {
-
 
     float scaleX = (float)sourceW / (float)targetW;
     float scaleY = (float)sourceH / (float)targetH;
@@ -83,7 +80,7 @@ void draw_rect(int x, int y, int w, int h) {
 
     for (int i = strokeWidth; i < w - strokeWidth; i++) {
         for (int j = strokeWidth; j < h - strokeWidth; j++) {
-            draw_pixel_fill(x + i, y + j);
+            draw_pixel(x + i, y + j);
         }
     }
 }
@@ -119,7 +116,7 @@ void draw_oval(int x, int y, int w, int h) {
                 }
                 else {
                     fillColor = fillBackup;
-                    draw_pixel_fill(x + i, y + j);
+                    draw_pixel(x + i, y + j);
                 }
             }
         }
@@ -138,14 +135,6 @@ void set_fill(int r, int g, int b, int a) {
     fillColor = (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16) | ((a & 0xFF) << 24);
 }
 
-void set_fillp(int fillp) {
-    fillPattern = fillp & 0xffff;
-}
-
-void set_fill2(int r, int g, int b, int a) {
-    fillColor2 = (r & 0xFF) | ((g & 0xFF) << 8) | ((b & 0xFF) << 16) | ((a & 0xFF) << 24);
-}
-
 void draw_pixel(int x, int y) {
     if(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) {
         return;
@@ -154,19 +143,6 @@ void draw_pixel(int x, int y) {
     blend(bg, fillColor, *bg);
 }
 
-void draw_pixel_fill(int x, int y) {
-    uint32_t fillBackup = fillColor;
-    if ((1 << ((x % 4) + (y % 4) * 4) & fillPattern)) {
-        fillColor = fillColor2;
-    }
-    draw_pixel(x, y);
-    fillColor = fillBackup;
-}
-
 void draw_cls() {
     memset(&memory[MEM_DISPLAY_START], 0, MEM_DISPLAY_SIZE);
-}
-
-void set_fill_pattern(uint16_t pattern) {
-    fillPattern = pattern;
 }

@@ -8,6 +8,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 
 #include "st7789.h"
 #include "SD_SPI.h"
@@ -84,10 +85,15 @@ void ST7789(void *pvParameters)
 	ESP_LOGI(TAG, "TinyBit loaded game");
 
     // logic loop
+	int64_t start, end;
 	while(1) {
-		tinybit_frame();
-		lcdDrawImage(&dev, &display_buffer[0], 20, 20, 128, 128);
-	}
+        start = esp_timer_get_time(); // Start time in microseconds
+        tinybit_frame();
+		end = esp_timer_get_time(); // End time in microseconds
+		ESP_LOGI(TAG, "Frame render time: %lld us", (end - start));
+
+        lcdDrawImage(&dev, &display_buffer[0], 20, 20, 128, 128);
+    }
 
 	// never reach here
 	while (1) {
