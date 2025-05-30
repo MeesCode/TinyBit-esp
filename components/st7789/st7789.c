@@ -246,11 +246,9 @@ void lcdDrawImage(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16_t w
 	spi_master_write_addr(dev, dev->_offsety+y, dev->_offsety+y+h-1);
 	spi_master_write_command(dev, 0x2C); // Memory Write
 
-	//uint16_t size = dev->_width*dev->_height;
 	uint32_t size = w*h;
 	while (size > 0) {
-		// 1365 pixels per time (4095 bytes RGB).
-		uint16_t bs = (size > 256) ? 256 : size;
+		uint16_t bs = (size > 2048) ? 2048 : size;
 		spi_master_write_colors(dev, image, bs);
 		size -= bs;
 		image += bs*4; // 4 bytes per pixel
@@ -267,10 +265,8 @@ void lcdDrawSquare(TFT_t *dev, uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
 	spi_master_write_addr(dev, dev->_offsety+y, dev->_offsety+y+h-1);
 	spi_master_write_command(dev, 0x2C); // Memory Write
 
-	//uint16_t size = dev->_width*dev->_height;
 	uint32_t size = w*h;
 	while (size > 0) {
-		// 1365 pixels per time (4095 bytes RGB).
 		uint16_t bs = (size > 2048) ? 2048 : size;
 		spi_master_write_color(dev, color, bs);
 		size -= bs;

@@ -142,6 +142,7 @@ uint8_t* tinybit_init() {
 
 bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
     
+    // TODO: fix this
     // check if cartridge index is within bounds
     // if (cartridge_index + (pixels/4) > (CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT)/4) {
     //     return false; 
@@ -170,29 +171,28 @@ bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
     return true;
 }
 
-char* tinybit_start(){
+bool tinybit_start(){
      // load lua file
     if (luaL_dostring(L, source_buffer) == LUA_OK) {
         lua_pop(L, lua_gettop(L));
-    } else {
-        return error_message;
+    } else{
+        return false; // error in lua code
     }
 
-    return source_buffer;
+    return true;
 }
 
-int tinybit_frame() {
+bool tinybit_frame() {
     // perform lua draw function every frame
     lua_getglobal(L, "_draw");
-    int res = lua_pcall(L, 0, 1, 0);
-    if (res == LUA_OK) {
+    if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
         lua_pop(L, lua_gettop(L));
     } else {
-        return res;
+        return false; // error in lua code
     }
 
     // save current button state
     save_button_state();
 
-    return -1;
+    return true;
 }

@@ -14,7 +14,7 @@
 
 uint8_t* tinybit_init();
 bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels);
-int tinybit_frame();
-char* tinybit_start();
+bool tinybit_frame();
+bool tinybit_start();
 
 #endif
