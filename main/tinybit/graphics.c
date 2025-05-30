@@ -13,6 +13,32 @@ uint32_t fillColor = 0;
 uint32_t strokeColor = 0;
 int strokeWidth = 0;
 
+static const int sin_table[] = {
+    0, 1143, 2287, 3429, 4571, 5711, 6850, 7986, 9120, 10252, 11380,
+    12504, 13625, 14742, 15854, 16961, 18064, 19160, 20251, 21336, 22414,
+    23486, 24550, 25606, 26655, 27696, 28729, 29752, 30767, 31772, 32768,
+    33753, 34728, 35693, 36647, 37589, 38521, 39440, 40347, 41243, 42125,
+    42995, 43852, 44695, 45525, 46340, 47142, 47929, 48702, 49460, 50203,
+    50931, 51643, 52339, 53019, 53683, 54331, 54963, 55577, 56175, 56755,
+    57319, 57864, 58393, 58903, 59395, 59870, 60326, 60763, 61183, 61583,
+    61965, 62328, 62672, 62997, 63302, 63589, 63856, 64103, 64331, 64540,
+    64729, 64898, 65047, 65176, 65286, 65376, 65446, 65496, 65526, 65536,
+};
+
+int fast_sin(int angle) {
+    angle = angle % 360;
+    if (angle < 0) angle += 360;
+    
+    if (angle <= 90) return sin_table[angle];
+    else if (angle <= 180) return sin_table[180 - angle];
+    else if (angle <= 270) return -sin_table[angle - 180];
+    else return -sin_table[360 - angle];
+}
+
+int fast_cos(int angle) {
+    return fast_sin(angle + 90);
+}
+
 void blend(uint32_t* result, uint32_t fg, uint32_t bg) {
     uint32_t alpha_fg = fg >> 24;
     
@@ -187,6 +213,51 @@ void draw_pixel(int x, int y) {
     }
     uint32_t* pixel = (uint32_t*)&memory[MEM_DISPLAY_START + (y * SCREEN_WIDTH + x) * 4];
     blend(pixel, fillColor, *pixel);
+}
+
+void draw_sprite_rotated(int sourceX, int sourceY, int sourceW, int sourceH, int targetX, int targetY, int targetW, int targetH, int angleDegrees) {
+    int cosA = fast_cos(angleDegrees);
+    int sinA = fast_sin(angleDegrees);
+    
+    int centerX = targetW >> 1;
+    int centerY = targetH >> 1;
+    
+    int clipStartX = targetX < 0 ? -targetX : 0;
+    int clipStartY = targetY < 0 ? -targetY : 0;
+    int clipEndX = (targetX + targetW > SCREEN_WIDTH) ? SCREEN_WIDTH - targetX : targetW;
+    int clipEndY = (targetY + targetH > SCREEN_HEIGHT) ? SCREEN_HEIGHT - targetY : targetH;
+    
+    if (clipStartX >= clipEndX || clipStartY >= clipEndY) return;
+    
+    int scaleX_fixed = (sourceW << 16) / targetW;
+    int scaleY_fixed = (sourceH << 16) / targetH;
+    
+    for (int y = clipStartY; y < clipEndY; ++y) {
+        for (int x = clipStartX; x < clipEndX; ++x) {
+            int relX = x - centerX;
+            int relY = y - centerY;
+            
+            int rotX = ((relX * cosA - relY * sinA) >> 16) + centerX;
+            int rotY = ((relX * sinA + relY * cosA) >> 16) + centerY;
+            
+            if (rotX >= 0 && rotX < targetW && rotY >= 0 && rotY < targetH) {
+                int sourcePixelX = sourceX + ((rotX * scaleX_fixed) >> 16);
+                int sourcePixelY = sourceY + ((rotY * scaleY_fixed) >> 16);
+                
+                if (sourcePixelX >= sourceX && sourcePixelX < sourceX + sourceW &&
+                    sourcePixelY >= sourceY && sourcePixelY < sourceY + sourceH) {
+                    
+                    uint32_t* src = (uint32_t*)&memory[MEM_SPRITESHEET_START + (sourcePixelY * SCREEN_WIDTH + sourcePixelX) * 4];
+                    uint32_t srcColor = *src;
+                    
+                    if ((srcColor >> 24) > 0) {
+                        uint32_t* dst = (uint32_t*)&memory[MEM_DISPLAY_START + ((targetY + y) * SCREEN_WIDTH + targetX + x) * 4];
+                        blend(dst, srcColor, *dst);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void draw_cls() {
