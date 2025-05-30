@@ -34,12 +34,17 @@ void ST7789(void *pvParameters)
 	lcdInit(&dev, CONFIG_WIDTH, CONFIG_HEIGHT, CONFIG_OFFSETX, CONFIG_OFFSETY);
     SD_Init();
 
+	// set up button io
+	gpio_set_direction(9, GPIO_MODE_INPUT);
+
     //lcdFillScreen(&dev, BLACK);
     lcdDrawSquare(&dev, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT, BLACK);
     ESP_LOGI(TAG, "Display Initialized");
 
 	// Initialize TinyBit with buffers
-	uint8_t *display_buffer = tinybit_init();
+	uint8_t *display_buffer;
+	uint8_t *button_state;
+	tinybit_init(&display_buffer, &button_state);
 
     ESP_LOGI(TAG, "Loading PNG file from SD card...");
     FILE *fp = fopen("/sdcard/flappy.png", "rb");
@@ -92,7 +97,14 @@ void ST7789(void *pvParameters)
 		// end = esp_timer_get_time(); // End time in microseconds
 		// ESP_LOGI(TAG, "Frame render time: %lld us", (end - start));
 
-        lcdDrawImage(&dev, &display_buffer[0], 20, 20, 128, 128);
+		// read gpio 9
+		if(!gpio_get_level(9)){
+			*button_state |= (1 << 2) & 0xff;
+		} else {
+			*button_state &= ~(1 << 2) & 0xff;
+		}
+
+        lcdDrawImage(&dev, display_buffer, 20, 20, 128, 128);
     }
 
 	// never reach here

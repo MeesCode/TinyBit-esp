@@ -4,21 +4,20 @@
 #include <stdbool.h>
 
 typedef enum {
-	X,
-	Z,
-	UP,
-	DOWN,
-	LEFT,
-	RIGHT,
-	START
+	BUTTON_A,
+	BUTTON_B,
+	BUTTON_UP,
+	BUTTON_DOWN,
+	BUTTON_LEFT,
+	BUTTON_RIGHT,
+	BUTTON_START,
+	BUTTON_SELECT
 } BUTTON;
 
-extern bool prev_button_state[7];
-
-void lua_setup_input();
 void save_button_state();
 bool input_btn(BUTTON btn);
 bool input_btnp(BUTTON btn);
 
+extern uint8_t button_state;
 
 #endif

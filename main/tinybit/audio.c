@@ -86,41 +86,41 @@ void queue_freq_square(float freq, int ms, int vol, int chan) {
 }
 
 void play_noise(int eights, int vol, int chan) {
-    if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
-        return;
-    }
-    int ms = ((60000 / bpm) / 8) * eights;
-    int samples = (44100/1000) * ms;
-    int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
-    for (int i = 0; i < samples; i++) {
-        buffer[i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol); 
-    }
+    // if(vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+    //     return;
+    // }
+    // int ms = ((60000 / bpm) / 8) * eights;
+    // int samples = (44100/1000) * ms;
+    // int16_t* buffer = (int16_t*)malloc(samples * sizeof(int16_t));
+    // for (int i = 0; i < samples; i++) {
+    //     buffer[i] = (rand() % ((GAIN * vol) * 2)) - (GAIN * vol); 
+    // }
     // Mix_Chunk* chunk = Mix_QuickLoad_RAW((Uint8*)buffer, samples * sizeof(int16_t));
     // Mix_PlayChannel(chan, chunk, 0);
 }
 
 void play_tone(TONE tone, int octave, int eights, WAVEFORM w, int vol, int chan) {
 
-    // tone 
-    if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
-        return;
-    }
+    // // tone 
+    // if (octave < 0 || octave > 6 || tone < 0 || tone > 11 || eights < 0 || vol < 0 || vol > 10 || chan < 0 || chan > 3) {
+    //     return;
+    // }
 
 
-    int ms = ((60000 / bpm) / 8) * eights;
-    float freq = frequencies[tone][octave];
+    // int ms = ((60000 / bpm) / 8) * eights;
+    // float freq = frequencies[tone][octave];
 
-    switch (w) {
-    case SINE:
-        queue_freq_sin(freq, ms, vol, chan);
-        break;
-    case SAW:
-        queue_freq_saw(freq, ms, vol, chan);
-        break;
-    case SQUARE:
-        queue_freq_square(freq, ms, vol, chan);
-        break;
-    }
+    // switch (w) {
+    // case SINE:
+    //     queue_freq_sin(freq, ms, vol, chan);
+    //     break;
+    // case SAW:
+    //     queue_freq_saw(freq, ms, vol, chan);
+    //     break;
+    // case SQUARE:
+    //     queue_freq_square(freq, ms, vol, chan);
+    //     break;
+    // }
 }
 
 void set_bpm(int new_bpm) {

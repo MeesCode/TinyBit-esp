@@ -52,7 +52,7 @@ void lua_setup_functions(lua_State* L) {
 }
 
 int lua_sprite(lua_State* L) {
-    if (lua_gettop(L) != 8) {
+    if (lua_gettop(L) != 8 && lua_gettop(L) != 9) {
         return 0;
     }
 
@@ -66,7 +66,14 @@ int lua_sprite(lua_State* L) {
     int targetW = (int)luaL_checknumber(L, 7);
     int targetH = (int)luaL_checknumber(L, 8);
 
-    draw_sprite_rotated(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, 20.0f);
+    if(lua_gettop(L) == 8) {
+        draw_sprite(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH);
+        return 0;
+    }
+
+    int targetR = (int)luaL_checknumber(L, 9);
+
+    draw_sprite_rotated(sourceX, sourceY, sourceW, sourceH, targetX, targetY, targetW, targetH, targetR);
     return 0;
 }
 

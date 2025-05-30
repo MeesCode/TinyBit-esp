@@ -20,13 +20,13 @@ char source_buffer[4096];
 int frame_timer = 0;
 lua_State* L;
 
-char error_message[256] = {0}; // error message buffer
-uint8_t* tinybit_init() {
-
-    strcpy(error_message, "lua error");
+bool tinybit_init(uint8_t** _display_buffer, uint8_t** _button_state) {
 
     // init functions
     memory_init();
+
+    *_button_state = &button_state; 
+    *_display_buffer = &memory[MEM_DISPLAY_START];
     
     // set up lua VM
     L = luaL_newstate();
@@ -118,26 +118,28 @@ uint8_t* tinybit_init() {
     lua_pushinteger(L, SCREEN_HEIGHT);
     lua_setglobal(L, "SCREEN_HEIGHT");
 
-    lua_pushinteger(L, X);
+    lua_pushinteger(L, BUTTON_A);
 	lua_setglobal(L, "X");
-	lua_pushinteger(L, Z);
+	lua_pushinteger(L, BUTTON_B);
 	lua_setglobal(L, "Z");
-	lua_pushinteger(L, UP);
+	lua_pushinteger(L, BUTTON_UP);
 	lua_setglobal(L, "UP");
-	lua_pushinteger(L, DOWN);
+	lua_pushinteger(L, BUTTON_DOWN);
 	lua_setglobal(L, "DOWN");
-	lua_pushinteger(L, LEFT);
+	lua_pushinteger(L, BUTTON_LEFT);
 	lua_setglobal(L, "LEFT");
-	lua_pushinteger(L, RIGHT);
+	lua_pushinteger(L, BUTTON_RIGHT);
 	lua_setglobal(L, "RIGHT");
-	lua_pushinteger(L, START);
+	lua_pushinteger(L, BUTTON_START);
 	lua_setglobal(L, "START");
+    lua_pushinteger(L, BUTTON_SELECT);
+	lua_setglobal(L, "SELECT");
 
     lua_setup_functions(L);
 
     // TODO: load font
 
-    return &memory[MEM_DISPLAY_START];
+    return true;
 }
 
 bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
