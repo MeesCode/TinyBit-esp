@@ -1,7 +1,10 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "graphics.h"
 #include "memory.h"
+#include "font.h"
+#include "assets/basic_font.h"
 
 int cursorX = 0;
 int cursorY = 0;
@@ -9,7 +12,7 @@ const int fontWidth = 4;
 const int fontHeight = 6;
 uint32_t textColor = 0xffffffff;
 
-char characters[16*8] = {
+char characters[16 * 8] = {
 	'?', '"', '%', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '!',  ' ', ' ', ' ',
 	'0', '1', '2', '3', '4',  '5', '6', '7', '8', '9', ':', ';', '<', '=',  '>', '?',
 	'@', 'a', 'b', 'c',  'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',  'm', 'n', 'o',
@@ -35,7 +38,7 @@ void font_prints(const char* str) {
 
 	int startX = cursorX;
 	uint32_t fillBackup = fillColor;
-	
+
 	while (*ptr) {
 
 		// process newline character
@@ -47,20 +50,27 @@ void font_prints(const char* str) {
 		}
 
 		// get character location
+		location = 0;
 		for (int i = 0; i < 16 * 8; i++) {
-			if (*ptr == characters[i]) location = i;
+			if (*ptr == characters[i]) {
+				location = i;
+				break; // Stop at the first match
+			}
 		}
 
-		// draw character 
+		// draw the character using the draw_pixel function
+		int charRow = location / 16;
+		int charCol = location % 16;
+
 		for (int y = 0; y < fontHeight; y++) {
 			for (int x = 0; x < fontWidth; x++) {
-				uint8_t alpha = memory[(128 * 4 * 8 * (location / 16)) + 8 * 4 * (location % 16) + MEM_FONT_START + (x + (y * 128)) * 4 + 3];
-				if (alpha != 0) {
+				int byteIndex = (charRow * (fontHeight+2)+y) * 16 + charCol;
+				int bitPosition = 7 - x;
+				uint8_t font_byte = basic_font[byteIndex];
+				if ((font_byte >> bitPosition) & 1) {
 					fillColor = textColor;
-					fillColor = (fillColor & 0xffffff00) | alpha;
 					draw_pixel(cursorX + x, cursorY + y);
-				}
-				else {
+				} else {
 					fillColor = fillBackup;
 					draw_pixel(cursorX + x, cursorY + y);
 				}

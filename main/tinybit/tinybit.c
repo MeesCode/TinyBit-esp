@@ -9,6 +9,7 @@
 #include "memory.h"
 #include "audio.h"
 #include "input.h"
+#include "font.h"
 
 #include "lua.h"
 #include "lualib.h"
