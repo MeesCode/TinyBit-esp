@@ -18,6 +18,9 @@
 
 static const char *TAG = "ST7789";
 
+struct TinyBitMemory tb_mem = {0};
+uint8_t bs = 0;
+
 void on_draw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
 {
 	tinybit_feed_catridge(rgba, 1); // Feed the cartridge buffer with the pixel data
@@ -42,9 +45,7 @@ void ST7789(void *pvParameters)
     ESP_LOGI(TAG, "Display Initialized");
 
 	// Initialize TinyBit with buffers
-	uint8_t *display_buffer;
-	uint8_t *button_state;
-	tinybit_init(&display_buffer, &button_state);
+	tinybit_init(&tb_mem, &bs);
 
     ESP_LOGI(TAG, "Loading PNG file from SD card...");
     FILE *fp = fopen("/sdcard/flappy.png", "rb");
@@ -99,12 +100,12 @@ void ST7789(void *pvParameters)
 
 		// read gpio 9
 		if(!gpio_get_level(9)){
-			*button_state |= (1 << 2) & 0xff;
+			bs |= (1 << 2) & 0xff;
 		} else {
-			*button_state &= ~(1 << 2) & 0xff;
+			bs &= ~(1 << 2) & 0xff;
 		}
 
-        lcdDrawImage(&dev, display_buffer, 20, 20, 128, 128);
+        lcdDrawImage(&dev, tb_mem.display, 20, 20, 128, 128);
     }
 
 	// never reach here

@@ -15,19 +15,21 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+struct TinyBitMemory* tinybit_memory;
+
 size_t cartridge_index = 0; // index for cartridge buffer
-//uint8_t source_buffer[CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4 - SCREEN_WIDTH * SCREEN_HEIGHT * 4]; // max source size
-char source_buffer[4096];
+//uint8_t source_buffer[TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4 - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4]; // max source size
+char source_buffer[16000];
 int frame_timer = 0;
 lua_State* L;
 
-bool tinybit_init(uint8_t** _display_buffer, uint8_t** _button_state) {
+bool tinybit_init(struct TinyBitMemory* memory, uint8_t* bs) {
 
-    // init functions
-    memory_init();
+    tinybit_memory = memory;
+    button_state = bs;
 
-    *_button_state = &button_state; 
-    *_display_buffer = &memory[MEM_DISPLAY_START];
+    // initialize memory
+    // memory_init();
     
     // set up lua VM
     L = luaL_newstate();
@@ -49,26 +51,18 @@ bool tinybit_init(uint8_t** _display_buffer, uint8_t** _button_state) {
     }
 
     // setup global variables
-    lua_pushinteger(L, MEM_SIZE);
+    lua_pushinteger(L, TB_MEM_SIZE);
     lua_setglobal(L, "MEM_SIZE");
-    lua_pushinteger(L, MEM_HEADER_START);
-    lua_setglobal(L, "MEM_HEADER_START");
-    lua_pushinteger(L, MEM_HEADER_SIZE);
-    lua_setglobal(L, "MEM_HEADER_SIZE");
-    lua_pushinteger(L, MEM_FONT_START);
-    lua_setglobal(L, "MEM_FONT_START");
-    lua_pushinteger(L, MEM_FONT_SIZE);
-    lua_setglobal(L, "MEM_FONT_SIZE");
-    lua_pushinteger(L, MEM_SPRITESHEET_START);
-    lua_setglobal(L, "MEM_SPRITESHEET_START");
-    lua_pushinteger(L, MEM_SPRITESHEET_SIZE);
-    lua_setglobal(L, "MEM_SPRITESHEET_SIZE");
-    lua_pushinteger(L, MEM_DISPLAY_START);
-    lua_setglobal(L, "MEM_DISPLAY_START");
-    lua_pushinteger(L, MEM_DISPLAY_SIZE);
-    lua_setglobal(L, "MEM_DISPLAY_SIZE");
-    // lua_pushinteger(L, MEM_USER_START);
-    // lua_setglobal(L, "MEM_USER_START");
+    lua_pushinteger(L, TB_MEM_SPRITESHEET_START);
+    lua_setglobal(L, "TB_MEM_SPRITESHEET_START");
+    lua_pushinteger(L, TB_MEM_SPRITESHEET_SIZE);
+    lua_setglobal(L, "TB_MEM_SPRITESHEET_SIZE");
+    lua_pushinteger(L, TB_MEM_DISPLAY_START);
+    lua_setglobal(L, "TB_MEM_DISPLAY_START");
+    lua_pushinteger(L, TB_MEM_DISPLAY_SIZE);
+    lua_setglobal(L, "TB_MEM_DISPLAY_SIZE");
+    // lua_pushinteger(L, TB_MEM_USER_START);
+    // lua_setglobal(L, "TB_MEM_USER_START");
 
     // set lua tone variables
     lua_pushinteger(L, Ab);
@@ -114,10 +108,10 @@ bool tinybit_init(uint8_t** _display_buffer, uint8_t** _button_state) {
     lua_pushinteger(L, SQUARE);
     lua_setglobal(L, "SQUARE");
 
-    lua_pushinteger(L, SCREEN_WIDTH);
-    lua_setglobal(L, "SCREEN_WIDTH");
-    lua_pushinteger(L, SCREEN_HEIGHT);
-    lua_setglobal(L, "SCREEN_HEIGHT");
+    lua_pushinteger(L, TB_SCREEN_WIDTH);
+    lua_setglobal(L, "TB_SCREEN_WIDTH");
+    lua_pushinteger(L, TB_SCREEN_HEIGHT);
+    lua_setglobal(L, "TB_SCREEN_HEIGHT");
 
     lua_pushinteger(L, BUTTON_A);
 	lua_setglobal(L, "X");
@@ -147,7 +141,7 @@ bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
     
     // TODO: fix this
     // check if cartridge index is within bounds
-    // if (cartridge_index + (pixels/4) > (CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT)/4) {
+    // if (cartridge_index + (pixels/4) > (TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT)/4) {
     //     return false; 
     // }
 
@@ -158,13 +152,18 @@ bool tinybit_feed_catridge(uint8_t* cartridge_buffer, size_t pixels){
         uint8_t a = cartridge_buffer[i + 3];
 
         // spritesheet data
-        if (cartridge_index < SCREEN_WIDTH * SCREEN_HEIGHT * 4) {
-            memory[MEM_SPRITESHEET_START + cartridge_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+        if (cartridge_index < TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4) {
+            tinybit_memory->spritesheet[cartridge_index] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
         }
 
         // source code
-        else if (cartridge_index - SCREEN_WIDTH * SCREEN_HEIGHT * 4 < CARTRIDGE_WIDTH * CARTRIDGE_HEIGHT * 4) {
-            source_buffer[cartridge_index - SCREEN_HEIGHT * SCREEN_WIDTH * 4] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+        else if (cartridge_index - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 < TB_CARTRIDGE_WIDTH * TB_CARTRIDGE_HEIGHT * 4) {
+            if(cartridge_index - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4 < sizeof(source_buffer)) {
+                source_buffer[cartridge_index - TB_SCREEN_WIDTH * TB_SCREEN_HEIGHT * 4] = (r & 0x3) << 6 | (g & 0x3) << 4 | (b & 0x3) << 2 | (a & 0x3) << 0;
+            } else {
+                // buffer overflow, ignore the rest
+                return false;
+            }
         }
 
         // increment cartridge index

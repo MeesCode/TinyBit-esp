@@ -2,31 +2,29 @@
 #include <stdint.h>
 #include <string.h>
 #include "memory.h"
-
-
-uint8_t memory[MEM_SIZE];
+#include "tinybit.h"
 
 void memory_init() {
-    memset(memory, 0, MEM_SIZE);
+    memset(tinybit_memory, 0, TB_MEM_SIZE);
 }
 
 void mem_copy(int dst, int src, int size) {
-    if (dst + size > MEM_SIZE || src + size > MEM_SIZE) {
+    if (dst + size > TB_MEM_SIZE || src + size > TB_MEM_SIZE) {
         return;
     }
-    memcpy(&memory[dst], &memory[src], size);
+    memcpy(&tinybit_memory[dst], &tinybit_memory[src], size);
 }
 
 uint8_t mem_peek(int dst) {
-    if (dst < 0 || dst > MEM_SIZE) {
+    if (dst < 0 || dst > TB_MEM_SIZE) {
         return 0;
     }
-    return *(uint8_t*)&memory[dst];
+    return *(uint8_t*)&tinybit_memory[dst];
 }
 
 void mem_poke(int dst, int val){
-    if (dst < 0 || dst > MEM_SIZE) {
+    if (dst < 0 || dst > TB_MEM_SIZE) {
         return;
     }
-    memory[dst] = val & 0xff;
+    *(uint8_t*)&tinybit_memory[dst] = val & 0xff;
 }

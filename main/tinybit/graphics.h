@@ -1,10 +1,6 @@
 #ifndef graphics_H
 #define graphics_H
 
-// Screen dimensions
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 128
-
 #include <stdint.h>
 
 extern uint32_t fillColor;

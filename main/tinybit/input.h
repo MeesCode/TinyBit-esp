@@ -18,6 +18,6 @@ void save_button_state();
 bool input_btn(BUTTON btn);
 bool input_btnp(BUTTON btn);
 
-extern uint8_t button_state;
+extern uint8_t* button_state;
 
 #endif

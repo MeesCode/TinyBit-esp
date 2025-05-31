@@ -4,15 +4,15 @@
 
 #include "input.h"
 
-uint8_t button_state = 0;
+uint8_t* button_state;
 uint8_t prev_button_state = 0;
 
 BUTTON button_down(BUTTON b){
-	return button_state & (1 << b);
+	return *button_state & (1 << b);
 }
 
 void save_button_state(){
-	prev_button_state = button_state;
+	prev_button_state = *button_state;
 }
 
 bool input_btn(BUTTON b) {
