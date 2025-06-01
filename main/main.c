@@ -12,7 +12,6 @@
 
 #include "st7789.h"
 #include "SD_SPI.h"
-#include "pngle.h"
 
 #include "tinybit.h"
 
@@ -20,11 +19,6 @@ static const char *TAG = "ST7789";
 
 struct TinyBitMemory tb_mem = {0};
 uint8_t bs = 0;
-
-void on_draw(pngle_t *pngle, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t rgba[4])
-{
-	tinybit_feed_catridge(rgba, 1); // Feed the cartridge buffer with the pixel data
-}
 
 void ST7789(void *pvParameters)
 {
@@ -54,38 +48,16 @@ void ST7789(void *pvParameters)
 		ESP_LOGE(TAG, "Failed to open PNG file");
 		return;
 	}
-
-    pngle_t *pngle = pngle_new();
-    pngle_set_draw_callback(pngle, on_draw);
     
-    char buf[1024];
-    int remain = 0;
-    int len;
-	ESP_LOGI(TAG, "Init read buffer with size %zu", sizeof(buf));
-
 	// Read the PNG file in chunks
-	while (!feof(fp)) {
-		if (remain >= sizeof(buf)) {
-			ESP_LOGE(__FUNCTION__, "Buffer exceeded");
-		}
-
-		len = fread(buf + remain, 1, sizeof(buf) - remain, fp);
-		if (len <= 0) {
-			break;
-		}
-
-		int fed = pngle_feed(pngle, buf, remain + len);
-		if (fed < 0) {
-			ESP_LOGE(__FUNCTION__, "ERROR; %s", pngle_error(pngle));
-		}
-
-		remain = remain + len - fed;
-		if (remain > 0) memmove(buf, buf + fed, remain);
+	uint8_t buf[1024];
+	size_t len;
+	while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+		tinybit_feed_catridge(buf, len);
 	}
 
     ESP_LOGI(TAG, "PNG file read complete");
     fclose(fp);
-    pngle_destroy(pngle);
 
 	tinybit_start();
 	ESP_LOGI(TAG, "TinyBit loaded game");
