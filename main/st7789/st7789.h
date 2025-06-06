@@ -15,6 +15,18 @@
 #define CYAN   rgb565(  0, 156, 209) // 0x04FA
 #define PURPLE rgb565(128,   0, 128) // 0x8010
 
+#define CONFIG_WIDTH 172
+#define CONFIG_HEIGHT 320
+#define CONFIG_OFFSETX 34
+#define CONFIG_OFFSETY 0
+#define CONFIG_MOSI_GPIO 6
+#define CONFIG_SCLK_GPIO 7
+#define CONFIG_CS_GPIO 14
+#define CONFIG_DC_GPIO 15
+#define CONFIG_RESET_GPIO 21
+#define CONFIG_BL_GPIO 22
+#define HOST_ID SPI2_HOST
+
 typedef struct {
 	uint16_t _width;
 	uint16_t _height;

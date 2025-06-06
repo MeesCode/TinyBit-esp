@@ -63,21 +63,29 @@ void ST7789(void *pvParameters)
 	ESP_LOGI(TAG, "TinyBit loaded game");
 
     // logic loop
-	// int64_t start, end;
+	const int64_t target_frame_us = 16667; // 16.667 ms in microseconds
+	int64_t frame_start;
 	while(1) {
-        // start = esp_timer_get_time(); // Start time in microseconds
+        frame_start = esp_timer_get_time(); // microseconds
+
         tinybit_frame();
-		// end = esp_timer_get_time(); // End time in microseconds
-		// ESP_LOGI(TAG, "Frame render time: %lld us", (end - start));
 
-		// read gpio 9
-		if(!gpio_get_level(9)){
-			bs |= (1 << 2) & 0xff;
-		} else {
-			bs &= ~(1 << 2) & 0xff;
-		}
+        // read gpio 9
+        if(!gpio_get_level(9)){
+            bs |= (1 << 2) & 0xff;
+        } else {
+            bs &= ~(1 << 2) & 0xff;
+        }
 
-        lcdDrawImage(&dev, tb_mem.display, 20, 20, 128, 128);
+        lcdDrawImage(&dev, tb_mem.display, 20, 20, 128, 128); // frame render time ~6910 us
+
+        // Frame limiting to 60 FPS
+        int64_t frame_time_us = esp_timer_get_time() - frame_start;
+        
+        if (frame_time_us < target_frame_us) {
+            int64_t delay_us = target_frame_us - frame_time_us;
+            vTaskDelay(delay_us / 1000 / portTICK_PERIOD_MS); // convert us to ms
+        }
     }
 
 	// never reach here
