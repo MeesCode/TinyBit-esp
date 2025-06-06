@@ -53,7 +53,7 @@ void ST7789(void *pvParameters)
 	uint8_t buf[1024];
 	size_t len;
 	while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		tinybit_feed_catridge(buf, len);
+		tinybit_feed_cartridge(buf, len);
 	}
 
     ESP_LOGI(TAG, "PNG file read complete");

@@ -165,7 +165,7 @@ bool spi_master_write_colors(TFT_t * dev, uint8_t * colors, uint16_t size)
 	int index = 0;
 	for(int i=0;i<size;i++) {
 		// convert to rgb565
-		uint16_t rgb565 = rgb565(colors[i*4], colors[i*4+1], colors[i*4+2]);
+		uint16_t rgb565 = rgb565(colors[i*2] & 0xF0, (colors[i*2] << 4) & 0xF0, colors[i*2+1] & 0xF0);
 		Byte[index++] = (rgb565 >> 8) & 0xFF;
 		Byte[index++] = rgb565 & 0xFF;
 	}
@@ -251,7 +251,7 @@ void lcdDrawImage(TFT_t *dev, uint8_t *image, uint16_t x, uint16_t y, uint16_t w
 		uint16_t bs = (size > 2048) ? 2048 : size;
 		spi_master_write_colors(dev, image, bs);
 		size -= bs;
-		image += bs*4; // 4 bytes per pixel
+		image += bs*2; // 4 bytes per pixel
 	}
 	return;
 }
