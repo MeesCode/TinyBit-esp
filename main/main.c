@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <dirent.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -20,6 +21,79 @@ static const char *TAG = "ST7789";
 struct TinyBitMemory tb_mem = {0};
 uint8_t bs = 0;
 
+void game_log(const char* c){
+	ESP_LOGI("GAME", "%s", c);
+}
+
+int game_count_cb() {
+    int count = 0;
+    DIR *dir = opendir("/sdcard/");
+    if (dir == NULL) {
+        perror("opendir");
+        return 0;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        const char *name = entry->d_name;
+        size_t len = strlen(name);
+        if (len >= 4 && strcmp(name + len - 4, ".PNG") == 0) {
+            count++;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+void game_load_cb(int index){
+
+    uint8_t buffer[256];
+    char filepath[256] = {0}; // Initialize to empty string
+
+    // open directory
+    DIR *dir = opendir("/sdcard/");
+    if (dir == NULL) {
+        perror("opendir");
+        return;
+    }
+
+    // find the file at the given index
+    struct dirent *entry;
+    int count = 0;
+    bool found = false;
+    while ((entry = readdir(dir)) != NULL) {
+        const char *name = entry->d_name;
+        size_t len = strlen(name);
+        if (len >= 4 && strcmp(name + len - 4, ".PNG") == 0) {
+            if (count == index) {
+                snprintf(filepath, sizeof(filepath), "/sdcard/%.200s", name);
+                found = true;
+                break;
+            }
+            count++;
+        }
+    }
+    closedir(dir);
+    
+    if (!found) {
+        printf("Game index %d not found\n", index);
+        return;
+    }
+
+    // load file
+    FILE *fp = fopen(filepath, "rb");
+    if (fp) {
+        size_t bytes_read;
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+            tinybit_feed_cartridge(buffer, bytes_read);
+        }
+        fclose(fp);
+    } else {
+        printf("Failed to open file: %s\n", filepath);
+    }
+	
+}
+
+
 void ST7789(void *pvParameters)
 {
 	TFT_t dev;
@@ -33,6 +107,7 @@ void ST7789(void *pvParameters)
 
 	// set up button io
 	gpio_set_direction(9, GPIO_MODE_INPUT);
+	gpio_set_direction(0, GPIO_MODE_INPUT);
 
     //lcdFillScreen(&dev, BLACK);
     lcdDrawSquare(&dev, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT, BLACK);
@@ -41,26 +116,12 @@ void ST7789(void *pvParameters)
 	// Initialize TinyBit with buffers
 	tinybit_init(&tb_mem, &bs);
 
-    ESP_LOGI(TAG, "Loading PNG file from SD card...");
-    FILE *fp = fopen("/sdcard/flappy.png", "rb");
-
-	if (fp == NULL) {
-		ESP_LOGE(TAG, "Failed to open PNG file");
-		return;
-	}
-    
-	// Read the PNG file in chunks
-	uint8_t buf[1024];
-	size_t len;
-	while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		tinybit_feed_cartridge(buf, len);
-	}
-
-    ESP_LOGI(TAG, "PNG file read complete");
-    fclose(fp);
-
-	tinybit_start();
 	ESP_LOGI(TAG, "TinyBit loaded game");
+	tinybit_log_cb(game_log);
+	tinybit_gamecount_cb(game_count_cb);
+    tinybit_gameload_cb(game_load_cb);
+
+	tinybit_start_ui();
 
     // logic loop
 	const int64_t target_frame_us = 16667; // 16.667 ms in microseconds
@@ -72,10 +133,17 @@ void ST7789(void *pvParameters)
 
         // read gpio 9
         if(!gpio_get_level(9)){
-            bs |= (1 << 2) & 0xff;
+            bs |= (1 << TB_BUTTON_UP) & 0xff;
         } else {
-            bs &= ~(1 << 2) & 0xff;
+            bs &= ~(1 << TB_BUTTON_UP) & 0xff;
         }
+
+		// read gpio 0
+		if(gpio_get_level(0)){
+			bs |= (1 << TB_BUTTON_DOWN) & 0xff;
+		} else {
+			bs &= ~(1 << TB_BUTTON_DOWN) & 0xff;
+		}
 
         lcdDrawImage(&dev, tb_mem.display, 20, 20, 128, 128); // frame render time ~6910 us
 
