@@ -106,8 +106,18 @@ void ST7789(void *pvParameters)
     SD_Init();
 
 	// set up button io
-	gpio_set_direction(9, GPIO_MODE_INPUT);
 	gpio_set_direction(0, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(0, GPIO_PULLDOWN_ONLY);
+    gpio_set_direction(1, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(1, GPIO_PULLDOWN_ONLY);
+    gpio_set_direction(19, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(19, GPIO_PULLDOWN_ONLY);
+    gpio_set_direction(18, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(18, GPIO_PULLDOWN_ONLY);
+    gpio_set_direction(23, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(23, GPIO_PULLDOWN_ONLY);
+    gpio_set_direction(20, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(20, GPIO_PULLDOWN_ONLY);
 
     //lcdFillScreen(&dev, BLACK);
     lcdDrawSquare(&dev, 0, 0, CONFIG_WIDTH, CONFIG_HEIGHT, BLACK);
@@ -121,7 +131,7 @@ void ST7789(void *pvParameters)
 	tinybit_gamecount_cb(game_count_cb);
     tinybit_gameload_cb(game_load_cb);
 
-	tinybit_start_ui();
+	tinybit_start();
 
     // logic loop
 	const int64_t target_frame_us = 16667; // 16.667 ms in microseconds
@@ -131,29 +141,52 @@ void ST7789(void *pvParameters)
 
         tinybit_frame();
 
-        // read gpio 9
-        if(!gpio_get_level(9)){
+		// read gpio 0
+		if(gpio_get_level(0)){
+			bs |= (1 << TB_BUTTON_B) & 0xff;
+		} else {
+			bs &= ~(1 << TB_BUTTON_B) & 0xff;
+		}
+
+        // read gpio 1
+		if(gpio_get_level(1)){
+			bs |= (1 << TB_BUTTON_A) & 0xff;
+		} else {
+			bs &= ~(1 << TB_BUTTON_A) & 0xff;
+		}
+
+        // read gpio 19
+        if(gpio_get_level(19)){
+            bs |= (1 << TB_BUTTON_LEFT) & 0xff;
+        } else {
+            bs &= ~(1 << TB_BUTTON_LEFT) & 0xff;
+        }
+
+        // read gpio 18
+        if(gpio_get_level(18)){
             bs |= (1 << TB_BUTTON_UP) & 0xff;
         } else {
             bs &= ~(1 << TB_BUTTON_UP) & 0xff;
         }
 
-		// read gpio 0
-		if(gpio_get_level(0)){
-			bs |= (1 << TB_BUTTON_DOWN) & 0xff;
-		} else {
-			bs &= ~(1 << TB_BUTTON_DOWN) & 0xff;
-		}
+        // read gpio 23
+        if(gpio_get_level(23)){
+            bs |= (1 << TB_BUTTON_DOWN) & 0xff;
+        } else {
+            bs &= ~(1 << TB_BUTTON_DOWN) & 0xff;
+        }
+
+        // read gpio 20
+        if(gpio_get_level(20)){
+            bs |= (1 << TB_BUTTON_RIGHT) & 0xff;
+        } else {
+            bs &= ~(1 << TB_BUTTON_RIGHT) & 0xff;
+        }
 
         lcdDrawImage(&dev, tb_mem.display, 20, 20, 128, 128); // frame render time ~6910 us
 
         // Frame limiting to 60 FPS
-        int64_t frame_time_us = esp_timer_get_time() - frame_start;
-        
-        if (frame_time_us < target_frame_us) {
-            int64_t delay_us = target_frame_us - frame_time_us;
-            vTaskDelay(delay_us / 1000 / portTICK_PERIOD_MS); // convert us to ms
-        }
+        while ((esp_timer_get_time() - frame_start) < target_frame_us);
     }
 
 	// never reach here
